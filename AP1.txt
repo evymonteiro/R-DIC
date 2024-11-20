@@ -1,0 +1,155 @@
+QUESTÃO 1)
+
+Para comparar as médias de produção de madeira de dois clones de eucalipto, vamos testar duas hipóteses, a primeira sendo, se as médias das producões dos dois clones são iguais e a segunda se as médias são diferentes, e para isso usaremos o teste t, com um nível de significância de 5%;
+
+$H_{0}:\text{a produção de madeira média dos dois clones são iguais}$
+
+$H_{1}:\text{a produção de madeira média de um clone é diferente}$
+
+{r}
+
+clone_a <- c(13, 19, 31, 15, 20, 30, 22, 35, 18, 33)
+clone_b <- c(31, 36, 39, 27, 26, 29, 45, 30, 28, 43)
+
+
+dados <- data.frame(
+  Produção = c(clone_a, clone_b),
+  Clone = rep(c("A", "B"), each = 10)
+)
+
+
+Teste t para duas amostras independentes:
+
+{r}
+teste_t <- t.test(clone_a, clone_b, var.equal = TRUE)
+print(teste_t)
+
+
+Pelo teste t rejeitamos a hipótese nula, uma vez que, as médias de produção de madeira dos clones são diferentes. Os valores encontrados de média para o clone A e para o clone B foram 23,6 e 33,4 metros cúbicos de madeira, respectivamente.
+
+ANOVA:
+
+{r}
+anova_result <- aov(Produção ~ Clone, data = dados)
+
+summary(anova_result)
+
+
+Pela ANOVA, também rejeitamos a hipótese nula, uma vez que, as médias de produção de medeira dos clones são diferentes.
+
+Verificando se t2 é igual a F:
+
+{r}
+t_squared <- teste_t$statistic^2
+
+f_value <- summary(anova_result)[[1]]["Clone", "F value"]
+
+cat("t^2 =", t_squared, "\nF =", f_value, "\n")
+
+
+Como observado, o valor t2 é igual ao valor de F, o que confirma a igualdade entre os testes quanso se compara apenas dois tratamentos.
+
+Conclusões
+
+Como existe diferença significativa implica que as práticas de manejo ou seleção do clone para produção florestal devem considerar as diferenças observadas, possivelmente preferindo o clone com maior média de produção, sendo esse, o clone B.
+
+Essa equivalência do t2 com o teste F ocorre porque, com dois grupos, a soma de quadrados total pode ser dividida diretamente entre os quadrados entre os grupos (tratamentos) e os quadrados dentro dos grupos (erro), resultando na mesma fórmula subjacente.
+
+Quando há mais de dois grupos A ANOVA generaliza o conceito para comparar mais de dois tratamentos simultaneamente, avaliando se pelo menos um dos grupos difere dos outros. Nesse caso, o teste t deixa de ser aplicável diretamente porque ele só compara dois grupos por vez. Para múltiplos tratamentos, usar o teste t repetidamente aumentaria o risco de erro tipo I (rejeitar 𝐻0 quando ele é verdadeiro).
+
+QUESTÃO 2)
+
+Croqui de instalação do experimento:
+
+O experimento foi conduzido com 4 tratamentos (cores de papelão) e 6 repetições (posições aleatórias). No croqui, cada célula representa uma posição de um papelão no campo.A alocação foi feita aleatoriamente, garantindo que cada cor (tratamento) apareça 6 vezes, minimizando viés.
+
+{r}
+set.seed(123)
+tratamentos <- c("Azul", "Verde", "Branco", "Amarelo")
+repeticoes <- 6
+
+croqui <- replicate(repeticoes, sample(tratamentos))
+rownames(croqui) <- paste("Posição", 1:4)
+colnames(croqui) <- paste("Repetição", 1:6)
+
+print(croqui)
+
+Análise exploratória dos dados:
+
+{r}
+dados <- data.frame(
+  Azul = c(16, 11, 20, 21, 14, 17),
+  Verde = c(37, 32, 20, 29, 37, 32),
+  Branco = c(21, 12, 14, 17, 13, 20),
+  Amarelo = c(45, 59, 48, 46, 38, 47)
+)
+
+summary(dados)
+apply(dados, 2, sd)
+
+boxplot(dados, main = "Distribuição dos insetos capturados", 
+        xlab = "Cor do papelão", ylab = "Número de insetos",
+        col = c("blue", "green", "white", "yellow"))
+
+Em relação as médias o papelão amarelo capturou mais insetos (47,17), enquanto o azul e o branco capturaram menos (16,50 e 16,17, respectivamente). O desvio padrão é maior para o amarelo, sugerindo maior variação no número de insetos capturados. Pelo boxplot observamos que o papelão amarelo apresenta maior número de insetos capturados, azul e branco possuem números de insetos similares, ambos baixos. Verde está em um nível intermediário. O papelão amarelo também apresentou dois valores discrepantes.
+
+Análise de variância (ANOVA):
+
+$H_{0}:\text{Não há diferença significativa entre os números médios de insetos capturados para as diferentes cores de papelão.}$
+
+$H_{1}:\text{Pelo menos uma das médias do número de insetos capturados difere das outras.}$
+
+{r}
+dados_long <- stack(dados)
+colnames(dados_long) <- c("Insetos", "Tratamento")
+
+anova_result <- aov(Insetos ~ Tratamento, data = dados_long)
+summary(anova_result)
+
+
+F = 45,57, com p < 0,001: Rejeitamos 𝐻0. Isso significa que existe diferença significativa no número médio de insetos capturados entre as cores de papelão.
+
+Análise gráfica dos resíduos:
+
+{r}
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+plot(anova_result)
+ 
+
+Os gráficos de resíduos avaliados foram:
+
+Resíduos vs Ajustados: Mostrou que os resíduos estão distribuídos aleatoriamente em torno de zero, indicando que a homogeneidade de variâncias foi atendida.
+
+Histograma dos resíduos: Os resíduos seguem uma distribuição aproximadamente normal.
+
+QQ-Plot: Os pontos estão próximos da linha de referência, indicando normalidade nos resíduos.
+
+Conclusão: Não há indícios de problemas na adequação do modelo.
+
+Teste de homogeneidade de variâncias:
+
+{r}
+bartlett.test(Insetos ~ Tratamento, data = dados_long)
+
+library(car)
+leveneTest(Insetos ~ Tratamento, data = dados_long)
+
+
+Teste de normalidade:
+
+{r}
+shapiro.test(residuals(anova_result))
+
+Teste de comparações múltiplas:
+
+{r}
+tukey_result <- TukeyHSD(anova_result)
+print(tukey_result)
+
+plot(tukey_result)
+
+O papelão amarelo capturou significativamente mais insetos do que os outros tratamentos. O papelão verde capturou mais insetos do que azul e branco. Não há diferença significativa entre as capturas dos papelões azul e branco.
+
+Conclusões
+
+O papelão amarelo foi o mais eficiente na captura de insetos, seguido pelo verde. Azul e branco tiveram desempenhos similares, mas inferiores aos demais. Todos os pressupostos da ANOVA foram atendidos (normalidade e homogeneidade de variâncias). As comparações múltiplas confirmaram as diferenças significativas entre os tratamentos.
