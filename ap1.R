@@ -1,3 +1,4 @@
+
 ##QUESTÃO 1)  Avaliar a produção em volume de madeira (m^3)
 
 clone_a <- c(13, 19, 31, 15, 20, 30, 22, 35, 18, 33)
